@@ -154,8 +154,11 @@ characters.")
 ;;; Internal functions
 
 (defsubst math-tex-convert--special-char-unescaped (s pos)
-  "Return non-nil if S is not escaped and in
-`math-tex-convert-replace-only-if-escaped'.
+  "Return non-nil if S is not escaped and is a special character.
+
+A special character is one that should only be replaced if
+escaped (that is, a string in
+`math-tex-convert-replace-only-if-escaped').
 
 The character is escaped if the character right before position
 POS is a backslash."
