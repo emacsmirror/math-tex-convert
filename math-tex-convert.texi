@@ -1,0 +1,203 @@
+\input texinfo    @c -*- texinfo -*-
+@c %**start of header
+@setfilename math-tex-convert.info
+@settitle math-tex-convert - Convert @LaTeX{} macros to unicode and back
+@documentencoding UTF-8
+@documentlanguage en
+@c %**end of header
+
+@finalout
+@titlepage
+@title math-tex-convert - Convert @LaTeX{} macros to unicode and back
+@subtitle for version 0.1.0
+@author Enrico Flor (@email{enrico@@eflor.net})
+@end titlepage
+
+@contents
+
+@ifnottex
+@node Top
+@top math-tex-convert - Convert @LaTeX{} macros to unicode and back
+
+Copyright (C) 2022 Enrico Flor.
+
+Permission is granted to copy, distribute and/or modify this
+document under the terms of the GNU Free Documentation License,
+Version 1.3 or any later version published by the Free Software
+Foundation; with no Invariant Sections, with the Front-Cover Texts
+being “A GNU Manual,” and with the Back-Cover Texts as in (a)
+below.  A copy of the license is included in the section entitled
+“GNU Free Documentation License.”
+
+(a) The FSF’s Back-Cover Text is: “You have the freedom to copy and
+modify this GNU manual.”
+
+
+@itemize
+@item
+Git repository: @uref{https://github.com/enricoflor/math-convert, <https://github.com/enricoflor/math-tex-convert>}
+@end itemize
+@end ifnottex
+
+@menu
+* Introduction::
+* Usage::
+* Modify the defaults::
+
+@detailmenu
+--- The Detailed Node Listing ---
+
+Modify the defaults
+
+* Define your own replacement rules::
+* Strings to be converted only if escaped::
+* Strings never to be replaced::
+
+@end detailmenu
+@end menu
+
+@node Introduction
+@chapter Introduction
+
+Depending on what engine is used to output the pdf file, mathematical
+characters can be obtained in *@TeX{} either by using a @LaTeX{} macro
+(e.g. @code{\rightarrow}) or by inserting Unicode characters directly.
+
+There are times where one is forced to convert a source file from one
+strategy to the other.  For example, one might want to avoid using any
+@LaTeX{} macro that can be done without by using a Unicode character, but
+then, when the document is completed, it needs to be submitted for in
+a format that can be compiled by Pdf@TeX{} (which cannot deal with such
+characters).
+
+The aim of @code{math-tex-convert} is to make these moments as painless as
+possible, by providing two commands to go from Unicode to Macros and
+to Macros to Unicode.
+
+The only dependency of @code{math-tex-convert} that is not built in in Emacs 26.1+ is
+`math-symbol-list' (available on @uref{https://elpa.gnu.org/packages/math-symbol-lists.html, GNU Elpa}).  This package provides the
+predefined Macro-Unicode mappings that are used by default (this can
+be overridden as explained in @ref{Define your own replacement rules}).
+
+@node Usage
+@chapter Usage
+
+There are just two interactive commands with self-explanatory names:
+
+@itemize
+@item
+@code{math-tex-convert-to-macro}
+@item
+@code{math-tex-convert-to-unicode}
+@end itemize
+
+These command target the whole available portion of the buffer if
+called when the region is not active; otherwise they target only the
+region.  If a prefix argument is passed, only strings that are found
+in a (La)@TeX{} math environment are targeted for replacement.
+
+These functions mimic other built-in commands for text replacement,
+like `query-replace'.
+
+The proposed replacement is offered in the echo area.  For example,
+given the default mappings, if @code{math-tex-convert-to-unicode} is called and
+we are on @code{\in} the echo area will show at the left corner @code{\in → ∈.}
+
+At this point you have different options:
+
+@itemize
+@item
+@code{n}: skip to the next target
+@item
+@code{SPC}: perform the replacement and move to next target if there is one
+@item
+@code{/}: cycle through possible replacements (if there are more than one)
+@item
+@code{=}: write in the replacement yourself
+@item
+@code{!}: replace through the rest of the buffer (or region)
+non interactively.
+@end itemize
+
+@node Modify the defaults
+@chapter Modify the defaults
+
+@menu
+* Define your own replacement rules::
+* Strings to be converted only if escaped::
+* Strings never to be replaced::
+@end menu
+
+@node Define your own replacement rules
+@section Define your own replacement rules
+
+The predefined replacement rules are taken from the package @uref{https://elpa.gnu.org/packages/math-symbol-lists.html, Math
+symbol lists} (in GNU Elpa).
+
+You can add your rules by changing the value of these two variables
+(@code{nil} by default):
+
+@itemize
+@item
+@code{math-tex-convert-user-defined-macro-to-unicode-map}
+@item
+@code{math-tex-convert-user-defined-unicode-to-macro-map}
+@end itemize
+
+These variables can be either association lists or hash tables,
+whichever is more convenient for you (if you have hundreds of rules,
+hash tables are recommended).  For the purposes of the exposition
+here, let's assume they are association lists.
+
+Here's one possible value:
+
+@lisp
+(setq math-tex-convert-user-defined-unicode-to-macro-map
+      '(("λ" . ("\\lambda" "\\uplambda"))
+        ("α" . ("\\alpha"))
+        ("→" . nil)))
+@end lisp
+
+Given this value, the string @samp{"→"} will never be considered for
+replacement, whereas @samp{"λ"} has to potential replacement through which
+you can cycle, the default being @samp{"\lambda"} (the car of the list is the
+default).
+
+User defined rules always override predefined ones that may apply.
+
+If you want the predefined conversion table provided by
+@uref{https://elpa.gnu.org/packages/math-symbol-lists.html, Math symbol lists} to be ignored completely set:
+
+@lisp
+(setq math-tex-convert-ignore-predefined-tables t)
+@end lisp
+
+Assigning non-nil value to this variable will guarantee that rules
+that are not user defined are not operative.
+
+@node Strings to be converted only if escaped
+@section Strings to be converted only if escaped
+
+The default value for `math-tex-convert-replace-only-if-escaped' is the
+list:
+
+@example
+'("_" "^" "@{" "@}")
+@end example
+
+These strings will never be targeted for replacement unless they are
+escaped according to @TeX{} syntax (i.e., with a backslash).
+
+@node Strings never to be replaced
+@section Strings never to be replaced
+
+The default value for `math-tex-convert-strings-never-to-be-replaced' is
+the list:
+
+@example
+'("\\" "(" ")" "$" "[" "]")
+@end example
+
+These strings are never replaced.
+
+@bye

@@ -1,0 +1,144 @@
+#+TITLE: math-tex-convert - Convert LaTeX macros to unicode and back
+#+SUBTITLE: for version {{{version}}}
+#+AUTHOR: Enrico Flor
+#+EMAIL: enrico@eflor.net
+
+#+OPTIONS: ':t toc:t author:t email:t
+#+MACRO: version 0.1.0
+#+MACRO: updated last updated 7 September 2022
+
+Copyright (C) 2022 Enrico Flor.
+
+     Permission is granted to copy, distribute and/or modify this
+     document under the terms of the GNU Free Documentation License,
+     Version 1.3 or any later version published by the Free Software
+     Foundation; with no Invariant Sections, with the Front-Cover Texts
+     being “A GNU Manual,” and with the Back-Cover Texts as in (a)
+     below.  A copy of the license is included in the section entitled
+     “GNU Free Documentation License.”
+
+     (a) The FSF’s Back-Cover Text is: “You have the freedom to copy and
+     modify this GNU manual.”
+
+
++ Git repository: [[https://github.com/enricoflor/math-convert][<https://github.com/enricoflor/math-tex-convert>]]
+
+* Introduction
+
+Depending on what engine is used to output the pdf file, mathematical
+characters can be obtained in *TeX either by using a LaTeX macro
+(e.g. ~\rightarrow~) or by inserting Unicode characters directly.
+
+There are times where one is forced to convert a source file from one
+strategy to the other.  For example, one might want to avoid using any
+LaTeX macro that can be done without by using a Unicode character, but
+then, when the document is completed, it needs to be submitted for in
+a format that can be compiled by PdfTeX (which cannot deal with such
+characters).
+
+The aim of ~math-tex-convert~ is to make these moments as painless as
+possible, by providing two commands to go from Unicode to Macros and
+to Macros to Unicode.
+
+The only dependency of ~math-tex-convert~ that is not built in in Emacs 26.1+ is
+`math-symbol-list' (available on [[https://elpa.gnu.org/packages/math-symbol-lists.html][GNU Elpa]]).  This package provides the
+predefined Macro-Unicode mappings that are used by default (this can
+be overridden as explained in [[#user-defined-mappings]]).
+
+* Usage
+
+There are just two interactive commands with self-explanatory names:
+
++ ~math-tex-convert-to-macro~
++ ~math-tex-convert-to-unicode~
+
+These command target the whole available portion of the buffer if
+called when the region is not active; otherwise they target only the
+region.  If a prefix argument is passed, only strings that are found
+in a (La)TeX math environment are targeted for replacement.
+
+These functions mimic other built-in commands for text replacement,
+like `query-replace'.
+
+The proposed replacement is offered in the echo area.  For example,
+given the default mappings, if ~math-tex-convert-to-unicode~ is called and
+we are on ~\in~ the echo area will show at the left corner ~\in → ∈.~
+
+At this point you have different options:
+
++ ~n~: skip to the next target
++ ~SPC~: perform the replacement and move to next target if there is one
++ ~/~: cycle through possible replacements (if there are more than one)
++ ~=~: write in the replacement yourself
++ ~!~: replace through the rest of the buffer (or region)
+  non interactively.
+
+* Modify the defaults
+
+** Define your own replacement rules
+:PROPERTIES:
+:CUSTOM_ID: user-defined-mappings
+:END:
+
+The predefined replacement rules are taken from the package [[https://elpa.gnu.org/packages/math-symbol-lists.html][Math
+symbol lists]] (in GNU Elpa).
+
+You can add your rules by changing the value of these two variables
+(~nil~ by default):
+
++ ~math-tex-convert-user-defined-macro-to-unicode-map~
++ ~math-tex-convert-user-defined-unicode-to-macro-map~
+
+These variables can be either association lists or hash tables,
+whichever is more convenient for you (if you have hundreds of rules,
+hash tables are recommended).  For the purposes of the exposition
+here, let's assume they are association lists.
+
+Here's one possible value:
+
+#+begin_src emacs-lisp
+(setq math-tex-convert-user-defined-unicode-to-macro-map
+      '(("λ" . ("\\lambda" "\\uplambda"))
+        ("α" . ("\\alpha"))
+        ("→" . nil)))
+#+end_src
+
+Given this value, the string ="→"= will never be considered for
+replacement, whereas ="λ"= has to potential replacement through which
+you can cycle, the default being ="\lambda"= (the car of the list is the
+default).
+
+User defined rules always override predefined ones that may apply.
+
+If you want the predefined conversion table provided by
+[[https://elpa.gnu.org/packages/math-symbol-lists.html][Math symbol lists]] to be ignored completely set:
+
+#+begin_src emacs-lisp
+(setq math-tex-convert-ignore-predefined-tables t)
+#+end_src
+
+Assigning non-nil value to this variable will guarantee that rules
+that are not user defined are not operative.
+
+** Strings to be converted only if escaped
+
+The default value for `math-tex-convert-replace-only-if-escaped' is the
+list:
+
+#+begin_example
+'("_" "^" "{" "}")
+#+end_example
+
+These strings will never be targeted for replacement unless they are
+escaped according to TeX syntax (i.e., with a backslash).
+
+** Strings never to be replaced
+
+The default value for `math-tex-convert-strings-never-to-be-replaced' is
+the list:
+
+#+begin_example
+'("\\" "(" ")" "$" "[" "]")
+#+end_example
+
+These strings are never replaced.
