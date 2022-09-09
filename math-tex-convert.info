@@ -1,6 +1,11 @@
 This is math-tex-convert.info, produced by makeinfo version 6.8 from
 math-tex-convert.texi.
 
+INFO-DIR-SECTION Emacs misc features
+START-INFO-DIR-ENTRY
+* Math-tex-convert: (math-tex-convert).   Convert LaTeX macros to unicode and back.
+END-INFO-DIR-ENTRY
+
 
 File: math-tex-convert.info,  Node: Top,  Next: Introduction,  Up: (dir)
 
