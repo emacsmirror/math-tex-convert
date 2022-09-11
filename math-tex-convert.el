@@ -6,7 +6,7 @@
 ;; Maintainer: Enrico Flor <enrico@eflor.net>
 ;; URL: https://github.com/enricoflor/math-tex-convert
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "26.1") (math-symbol-lists "1.3"))
+;; Package-Requires: ((emacs "26.1") (math-symbol-lists "1.3") (auctex "12.1"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -38,6 +38,7 @@
 (require 'texmathp)
 (require 'map)
 (require 'subr-x)
+(require 'cl-seq)
 (require 'math-symbol-lists)
 
 ;;; Predefined tables
@@ -61,9 +62,9 @@ Values are taken from `math-symbol-list-extended'.")
     (puthash (nth 1 x) (nth 3 x)
 	     math-tex-convert--macro-to-unicode-hash-table)))
 
-(maphash #'(lambda (k v)
-	     (puthash v k
-		      math-tex-convert--unicode-to-macro-hash-table))
+(maphash (lambda (k v)
+	   (puthash v k
+		    math-tex-convert--unicode-to-macro-hash-table))
 	 math-tex-convert--macro-to-unicode-hash-table)
 
 ;;; User settings
@@ -235,10 +236,10 @@ environment, as determined by `texmathp'."
          (keys-re (thread-last
                     (append (map-keys table) user-keys)
                     (cl-delete-if
-                     #'(lambda (x)
-                         (member
-                          x
-                          math-tex-convert-strings-never-to-be-replaced)))
+                     (lambda (x)
+                       (member
+                        x
+                        math-tex-convert-strings-never-to-be-replaced)))
                     (regexp-opt)))
          (begin (if (use-region-p) (set-marker (make-marker)
                                                (region-beginning))
@@ -295,11 +296,11 @@ environment, as determined by `texmathp'."
                     (insert (math-tex-convert--get-replacement replacement))
                     (setq done (1+ done))))
               (delete-overlay hlt))))
-      (message (format "%s replaced" done)))))
+      (message  "%s replaced" done))))
 
 
 
-;; Interactive Functions:
+;;; Interactive Functions
 
 (defun math-tex-convert-to-unicode (&optional arg)
   "Replace math LaTeX macros with unicode characters.
