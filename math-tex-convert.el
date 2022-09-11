@@ -38,7 +38,7 @@
 (require 'texmathp)
 (require 'map)
 (require 'subr-x)
-(require 'cl-seq)
+(require 'cl-lib)
 (require 'math-symbol-lists)
 
 ;;; Predefined tables
