@@ -74,8 +74,8 @@ Values are taken from `math-symbol-list-extended'.")
 (defvar math-tex-convert-user-defined-macro-to-unicode-map nil
   "Alist or hash-table of additional mappings.
 
-The key is always a string that identifies a macro.  The values
-can be strings or lists of strings.
+The key is always a string that identifies a macro.  The value
+can be a string, a list of strings or an empty string.
 
 This map is looked up before the predefined one, so that the
 values specified here override the predefined one.
@@ -93,17 +93,16 @@ that the macro \"\\lambda\" will always be ignored, regardless
 of whether it is mapped to something in the predefined value in
 `math-tex-convert--macro-to-unicode-hash-table'.
 
-Having mapping 3. means that upon matching the macro
-\"\\lambda\" you will be given the choice between \"λ\" and
-\"Λ\" in interactive mode (i.e., when `math-tex-convert--replace' is
-called with a non-nil second argument).  In non-interactive mode,
-the car of the list is always the replacement.")
+Having mapping 3. means that upon matching the macro \"\\lambda\"
+you will be given the choice between \"λ\" and \"Λ\" in
+interactive mode.  In non-interactive mode (i.e., when you opt to
+\"convert all\"), the car of the list is always the replacement.")
 
 (defvar math-tex-convert-user-defined-unicode-to-macro-map nil
   "Alist or hash-table of additional mappings.
 
-The key is always a string that identifies a macro.  The values
-can be strings or lists of strings.
+The key is always a string that identifies a macro.  The value
+can be a string, a list of strings or an empty string.
 
 This map is looked up before the predefined one, so that the
 values specified here override the predefined one.
@@ -128,9 +127,8 @@ you should add that to the list
 
 Having mapping 3. means that upon matching \"λ\" you will be
 given the choice between \"\\lambda\" and \"\\uplambda\" in
-interactive mode (i.e., when `math-tex-convert--replace' is called
-with a non-nil second argument).  In non-interactive mode, the
-car of the list is always the replacement.")
+interactive mode.  In non-interactive mode (i.e., when you opt to
+\"convert all\"), the car of the list is always the replacement.")
 
 (defvar math-tex-convert-replace-only-if-escaped
   '("_" "^" "{" "}")
