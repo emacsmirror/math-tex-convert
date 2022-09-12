@@ -7,6 +7,8 @@
 #+MACRO: version 0.1.0
 #+MACRO: updated last updated 7 September 2022
 
+[[https://melpa.org/#/math-tex-convert][file:https://melpa.org/packages/math-tex-convert-badge.svg]]
+
 Copyright (C) 2022 Enrico Flor.
 
      Permission is granted to copy, distribute and/or modify this
@@ -40,10 +42,13 @@ The aim of ~math-tex-convert~ is to make these moments as painless as
 possible, by providing two commands to go from Unicode to Macros and
 to Macros to Unicode.
 
-The only dependency of ~math-tex-convert~ that is not built in in Emacs 26.1+ is
-`math-symbol-list' (available on [[https://elpa.gnu.org/packages/math-symbol-lists.html][GNU Elpa]]).  This package provides the
-predefined Macro-Unicode mappings that are used by default (this can
-be overridden as explained in [[#user-defined-mappings]]).
+The only dependency of ~math-tex-convert~ that is not built in in Emacs
+26.1+ is `math-symbol-list' (available on [[https://elpa.gnu.org/packages/math-symbol-lists.html][GNU Elpa]]).  This package
+provides the predefined Macro-Unicode mappings that are used by
+default (this can be overridden as explained in
+[[#user-defined-mappings]]).
+
+You can install this package through [[https://melpa.org/#/math-tex-convert][Melpa]].
 
 * Usage
 
