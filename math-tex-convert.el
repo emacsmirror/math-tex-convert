@@ -248,7 +248,7 @@ environment, as determined by `texmathp'."
                                              (region-end))
                 (set-marker (make-marker) (point-max))))
          (number (count-matches keys-re begin end))
-         (test (if only-in-math 'texmathp 'always))
+         (test (if only-in-math 'texmathp '(lambda () t)))
          (done 0)
          (wait t))
     (when (> 1 number) (user-error "Nothing to convert"))
@@ -302,6 +302,7 @@ environment, as determined by `texmathp'."
 
 ;;; Interactive Functions
 
+;;;###autoload
 (defun math-tex-convert-to-unicode (&optional arg)
   "Replace math LaTeX macros with unicode characters.
 
@@ -313,6 +314,7 @@ inside of LaTeX math environment (as determined by `texmathp')."
   (interactive "P")
   (save-excursion (math-tex-convert--replace nil arg)))
 
+;;;###autoload
 (defun math-tex-convert-to-macro (&optional arg)
   "Replace math characters with LaTeX macros.
 
