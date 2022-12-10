@@ -122,6 +122,9 @@ non interactively.
 @node Modify the defaults
 @chapter Modify the defaults
 
+All the customizations can be accessed easily with the command
+@code{math-tex-convert-customize}.
+
 @menu
 * Define your own replacement rules::
 * Strings to be converted only if escaped::

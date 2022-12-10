@@ -5,7 +5,7 @@
 ;; Author: Enrico Flor <enrico@eflor.net>
 ;; Maintainer: Enrico Flor <enrico@eflor.net>
 ;; URL: https://github.com/enricoflor/math-tex-convert
-;; Version: 0.1.0
+;; Version: 0.2.0
 ;; Package-Requires: ((emacs "26.1") (math-symbol-lists "1.3") (auctex "12.1"))
 
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -71,7 +71,12 @@ Values are taken from `math-symbol-list-extended'.")
 
 ;;; User settings
 
-(defvar math-tex-convert-user-defined-macro-to-unicode-map nil
+(defgroup math-tex-convert nil
+  "Convert LaTeX macros to unicode and back."
+  :prefix "math-tex-convert"
+  :group 'convenience)
+
+(defcustom math-tex-convert-user-defined-macro-to-unicode-map nil
   "Alist or hash-table of additional mappings.
 
 The key is always a string that identifies a macro.  The value
@@ -96,9 +101,12 @@ of whether it is mapped to something in the predefined value in
 Having mapping 3. means that upon matching the macro \"\\lambda\"
 you will be given the choice between \"λ\" and \"Λ\" in
 interactive mode.  In non-interactive mode (i.e., when you opt to
-\"convert all\"), the car of the list is always the replacement.")
+\"convert all\"), the car of the list is always the replacement."
+  :type '(alist :key-type (string  :tag "LaTeX macro")
+                :value-type (repeat string))
+  :group 'math-tex-convert)
 
-(defvar math-tex-convert-user-defined-unicode-to-macro-map nil
+(defcustom math-tex-convert-user-defined-unicode-to-macro-map nil
   "Alist or hash-table of additional mappings.
 
 The key is always a string that identifies a macro.  The value
@@ -128,45 +136,54 @@ you should add that to the list
 Having mapping 3. means that upon matching \"λ\" you will be
 given the choice between \"\\lambda\" and \"\\uplambda\" in
 interactive mode.  In non-interactive mode (i.e., when you opt to
-\"convert all\"), the car of the list is always the replacement.")
+\"convert all\"), the car of the list is always the replacement."
+  :type '(alist :key-type (string  :tag "Character")
+                :value-type (repeat string))
+  :group 'math-tex-convert)
 
-(defvar math-tex-convert-replace-only-if-escaped
+(defcustom math-tex-convert-replace-only-if-escaped
   '("_" "^" "{" "}")
   "Strings to be converted only if escaped.
 
-Escaped means that they are preceded by just one backslash.")
+Escaped means that they are preceded by just one backslash."
+  :type '(repeat string)
+  :group 'math-tex-convert)
 
-(defvar math-tex-convert-ignore-predefined-tables nil
+(defcustom math-tex-convert-ignore-predefined-tables nil
   "If non-nil, predifined tables are completely ignored.
 
 All replacement are instead done by looking up
 `math-tex-convert-user-defined-unicode-to-macro-map' or
-`math-tex-convert-user-defined--macro-to-unicode-map'.")
+`math-tex-convert-user-defined--macro-to-unicode-map'."
+  :type 'boolean
+  :group 'math-tex-convert)
 
-(defvar math-tex-convert-strings-never-to-be-replaced
+(defcustom math-tex-convert-strings-never-to-be-replaced
   '("\\" "(" ")" "$" "[" "]")
   "List of strings that must never be replaced with a LaTeX macro.
 
 Typically these are delimiters in math modes and special
-characters.")
+characters."
+  :type '(repeat string)
+  :group 'math-tex-convert)
+
+(defcustom math-tex-convert-before-replace-hook nil
+  "Hooks to run before each replacement is performed."
+  :type 'hook
+  :group 'math-tex-convert)
+
+(defcustom math-tex-convert-after-replace-hook nil
+  "Hooks to run after each replacement is performed."
+  :type 'hook
+  :group 'math-tex-convert)
 
 
 
 ;;; Internal functions
 
-(defsubst math-tex-convert--special-char-unescaped (s pos)
-  "Return non-nil if S is not escaped and is a special character.
-
-A special character is one that should only be replaced if
-escaped (that is, a string in
-`math-tex-convert-replace-only-if-escaped').
-
-The character is escaped if the character right before position
-POS is a backslash."
-  (save-match-data
-    (and (not (save-excursion (goto-char (1- pos))
-			      (looking-at-p "\\\\")))
-         (member s math-tex-convert-replace-only-if-escaped))))
+(defsubst math-tex-convert--escape-string-p (string)
+  "Return non-nil if length STRING is an odd integer."
+  (eq (logand (length string) 1) 1))
 
 (defsubst math-tex-convert--get-replacement (x)
   "Return car of X if X is a list, X otherwise."
@@ -240,12 +257,13 @@ environment, as determined by `texmathp'."
                        (member
                         x
                         math-tex-convert-strings-never-to-be-replaced)))
-                    (regexp-opt)))
+                    (regexp-opt)
+                    (concat "\\(?1:\\\\*\\)")))
          (begin (if (use-region-p) (set-marker (make-marker)
                                                (region-beginning))
                   (set-marker (make-marker) (point-min))))
-         (end (if (use-region-p) (set-marker (make-marker)
-                                             (region-end))
+         (end (if (use-region-p)
+                  (set-marker (make-marker) (region-end))
                 (set-marker (make-marker) (point-max))))
          (number (count-matches keys-re begin end))
          (test (if only-in-math 'texmathp '(lambda () t)))
@@ -261,8 +279,14 @@ environment, as determined by `texmathp'."
                     ;; on otherwise search will complain that the bound is
                     ;; before point
                     (re-search-forward keys-re end t))
-          (let* ((hlt (make-overlay (match-beginning 0) (match-end 0)))
-                 (target (match-string 0))
+          (let* ((end-of-escape (match-end 1))
+                 (end-of-target (match-end 0))
+                 (hlt (make-overlay end-of-escape end-of-target))
+                 (target (buffer-substring end-of-escape end-of-target))
+                 (escaped (math-tex-convert--escape-string-p
+                           (match-string-no-properties 1)))
+                 (only-if-esc (member target
+                                      math-tex-convert-replace-only-if-escaped))
                  (replacement (if (member target user-keys)
                                   (map-elt user-table target)
                                 ;; this way, if the key is mapped to
@@ -271,13 +295,12 @@ environment, as determined by `texmathp'."
                                 (map-elt table target)))
                  (message-log-max nil))
             (overlay-put hlt 'face
-                         `((t (:background ,(face-attribute 'region
-                                                            :background)))))
+                         `((nil (:background ,(face-attribute 'region
+                                                              :background)))))
             (unwind-protect
                 (when (and (save-match-data (funcall test))
-                           (not (math-tex-convert--special-char-unescaped
-                                 target
-                                 (match-beginning 0)))
+                           (xor (and escaped only-if-esc)
+                                (and (not escaped) (not only-if-esc)))
                            ;; do nothing and continue the loop if the
                            ;; replacement is nil
                            replacement)
@@ -285,18 +308,40 @@ environment, as determined by `texmathp'."
                       (let ((outcome (math-tex-convert--option-loop
                                       target
                                       replacement)))
-                        (if (equal (car outcome) 'skip)
-                            nil
-                          (delete-region (match-beginning 0) (match-end 0))
+                        (unless (equal (car outcome) 'skip)
+                          (run-hooks 'math-tex-convert-before-replace-hook)
+                          (let ((del-b (if escaped
+                                           (1- end-of-escape)
+                                         end-of-escape)))
+                            (delete-region del-b end-of-target))
+                          (when (and (not to-macro)
+                                     (member
+                                      (cdr outcome)
+                                      math-tex-convert-replace-only-if-escaped))
+                            ;; if the intended replacement unicode
+                            ;; character is among the strings in
+                            ;; math-tex-convert-replace-only-if-escaped,
+                            ;; it means that we need to escape it!
+                            (insert "\\"))
                           (insert (cdr outcome))
+                          (run-hooks 'math-tex-convert-after-replace-hook)
                           (setq done (1+ done))
-                          (when (equal (car outcome) 'all)
-                            (setq wait nil))))
-                    (delete-region (match-beginning 0) (match-end 0))
-                    (insert (math-tex-convert--get-replacement replacement))
+                          (when (equal (car outcome) 'all) (setq wait nil))))
+                    (let ((del-b (if escaped
+                                     (1- end-of-escape)
+                                   end-of-escape))
+                          (rep (math-tex-convert--get-replacement replacement)))
+                      (delete-region del-b end-of-target)
+                      (when (and (not to-macro)
+                                 (member
+                                  rep
+                                  math-tex-convert-replace-only-if-escaped))
+                        ;; same as above
+                        (insert "\\"))
+                      (insert rep))
                     (setq done (1+ done))))
               (delete-overlay hlt))))
-      (message  "%s replaced" done))))
+      (message "%s replaced" done))))
 
 
 
@@ -325,6 +370,12 @@ If called with prefix argument ARG, only perform replacement
 inside of LaTeX math environment (as determined by `texmathp')."
   (interactive "P")
   (save-excursion (math-tex-convert--replace t arg)))
+
+;;;###autoload
+(defun math-tex-convert-customize ()
+  "Call the customize function with math-tex-convert as argument."
+  (interactive)
+  (customize-browse 'math-tex-convert))
 
 (provide 'math-tex-convert)
 

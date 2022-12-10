@@ -79,7 +79,8 @@ At this point you have different options:
   non interactively.
 
 * Modify the defaults
-
+All the customizations can be accessed easily with the command
+~math-tex-convert-customize~.
 ** Define your own replacement rules
 :PROPERTIES:
 :CUSTOM_ID: user-defined-mappings

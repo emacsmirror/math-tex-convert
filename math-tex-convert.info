@@ -111,6 +111,9 @@ File: math-tex-convert.info,  Node: Modify the defaults,  Prev: Usage,  Up: Top
 3 Modify the defaults
 *********************
 
+All the customizations can be accessed easily with the command
+‘math-tex-convert-customize’.
+
 * Menu:
 
 * Define your own replacement rules::
